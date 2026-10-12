@@ -48,3 +48,7 @@ Uninstalling the app, changing domains, clearing website data, and some phone st
 ## Responsive album (v7)
 
 On desktops the binder opens as two facing 3×3 pages. On phones and portrait tablets, one complete page of nine cards fills the screen width; tap Previous/Next or swipe horizontally to turn a page. Book and subgroup selectors are compact dropdowns on phones, while desktop keeps the tabs. Card numbers appear beneath photos.
+
+
+## v9 · Three-page interface
+The atlas has three fixed screens: Home (record sightings and overview), Binder (album, default All animals), More (backup/import, journal, install). On phones, switch using the fixed bottom navigation. The full 3×3 book page fits without sideways or page scrolling. Modals (identification, photo framing) scroll internally if necessary.

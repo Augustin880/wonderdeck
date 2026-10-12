@@ -12,7 +12,7 @@ function wizardGroupOptions(){return SUBCATEGORIES[wizard.cat]?.[wizard.subcat]|
 function wizardSteps(){return ['photo','category',...(SUBCATEGORIES[wizard?.cat]?['subcategory']:[]),'group','habitat','size','match','confirm'];}
 const DB_NAME = 'wonderdeck-photo-atlas-v1';
 const DB_VERSION = 1;
-let db, customSpecies=[], sightings=[], activeCategory='Birds', pageByBook={All:0,Birds:0}, subcategoryByBook={}, openCardId=null, activeSightingId=null, wizard=null, imageURLs=new Map(), toastTimer;
+let db, customSpecies=[], sightings=[], activeCategory='All', pageByBook={All:0,Birds:0}, subcategoryByBook={}, openCardId=null, activeSightingId=null, wizard=null, imageURLs=new Map(), toastTimer;
 const $ = sel => document.querySelector(sel);
 const el = id => document.getElementById(id);
 const esc = value => String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -136,6 +136,7 @@ function render(){const all=catalog(),known=new Set(sightings.map(o=>o.speciesId
  el('categoryTabs').innerHTML=allBooks.map(c=>{const list=c==='All'?all:all.filter(s=>s.category===c),found=list.filter(s=>known.has(s.id)).length;return `<button class="category ${activeCategory===c?'active':''}" role="tab" aria-selected="${activeCategory===c}" onclick="chooseCategory(${JSON.stringify(c).replaceAll('"','&quot;')})">${c==='All'?'▦':CATEGORY_ICONS[c]} ${esc(c==='All'?'All book':c)} <b>${found}/${list.length}</b></button>`;}).join('');
  el('mobileBookSelect').innerHTML=allBooks.map(c=>{const list=c==='All'?all:all.filter(s=>s.category===c),found=list.filter(s=>known.has(s.id)).length;return `<option value="${esc(c)}" ${activeCategory===c?'selected':''}>${c==='All'?'All animals':c}  ·  ${found}/${list.length}</option>`;}).join('');
  const selected=bookSpecies(),nested=SUBCATEGORIES[activeCategory];
+ el('mobileBookPicker').classList.toggle('single-book-select',!nested);
  if(nested){
   const listed=all.filter(s=>s.category===activeCategory),other=listed.some(s=>subcategoryOf(s)==='Unsorted'),options=['All',...Object.keys(nested),...(other?['Unsorted']:[])];
   const categoryOptions=options.map(sub=>{const filtered=sub==='All'?listed:listed.filter(s=>subcategoryOf(s)===sub);const found=filtered.filter(s=>known.has(s.id)).length;return {sub,found,total:filtered.length};});
@@ -171,7 +172,21 @@ function attachBookSwipe(){
  binder.addEventListener('touchend',e=>{if(!isPhoneBook()||!bookTouch||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-bookTouch.x,dy=e.changedTouches[0].clientY-bookTouch.y;bookTouch=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.35)changeSpread(dx<0?1:-1);},{passive:true});
  binder.addEventListener('touchcancel',()=>{bookTouch=null;},{passive:true});
 }
-function goTo(id){el(id).scrollIntoView({behavior:'smooth'});}
+let activeScreen='top';
+function goTo(id){
+ const next=id==='binder'?'binder':(id==='settings'||id==='journal'?'settings':'top');
+ activeScreen=next;
+ document.querySelectorAll('.app-screen').forEach(panel=>{
+   const selected=panel.id===next;panel.classList.toggle('is-active',selected);
+   panel.setAttribute('aria-hidden',String(!selected));
+ });
+ document.querySelectorAll('[data-go]').forEach(button=>{
+   const target=button.dataset.go==='binder'?'binder':(button.dataset.go==='settings'||button.dataset.go==='journal'?'settings':'top');
+   const selected=target===next;button.classList.toggle('active',selected);
+   if(button.classList.contains('bottom-item')){if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}
+ });
+ if(next==='binder')queuePhotoLayouts();
+}
 function openModal(html){el('modalContent').innerHTML=html;el('overlay').hidden=false;document.body.style.overflow='hidden';queuePhotoLayouts();}
 function closeModal(){el('overlay').hidden=true;document.body.style.overflow='';if(wizard?.previewURL){URL.revokeObjectURL(wizard.previewURL);wizard.previewURL='';}wizard=null;openCardId=null;}
 function wizardChoice(label,fn,sub=''){return `<button class="choice" onclick="${fn}">${esc(label)}${sub?`<small>${esc(sub)}</small>`:''}</button>`;}
@@ -245,16 +260,24 @@ async function exportBackup(){const btn=el('exportBtn');btn.disabled=true;btn.te
 async function importBackup(file){if(!file)return;let incoming;try{incoming=JSON.parse(await file.text());if(incoming.format!=='wonderdeck-wild-atlas'||!Array.isArray(incoming.customSpecies)||!Array.isArray(incoming.sightings))throw new Error('Wrong backup');if(incoming.customSpecies.length>10000||incoming.sightings.length>10000)throw new Error('Too many entries');const restored=incoming.sightings.map(o=>({...o,photo:dataURLtoBlob(o.photo)}));if(!confirm(`Replace this device's collection with ${restored.length} sightings from your backup? Your current collection will be replaced.`))return;
  await new Promise((resolve,reject)=>{const tx=db.transaction(['species','sightings'],'readwrite');tx.objectStore('species').clear();tx.objectStore('sightings').clear();for(const s of incoming.customSpecies){const mapped=normalizeSpecies(s);if(mapped.id&&mapped.name&&CATEGORY_ORDER.includes(mapped.category))tx.objectStore('species').put(mapped);}for(const o of restored){if(o.id&&o.speciesId&&o.photo.size)tx.objectStore('sightings').put(o);}tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});for(const u of imageURLs.values())URL.revokeObjectURL(u);imageURLs.clear();await reload();notify('Atlas restored with photos!');}catch(e){console.error(e);notify('Invalid backup or not enough storage.');}}
 async function resetAtlas(){if(!confirm('Permanently delete all your species, photographs and records on this device? Export a backup first.'))return;await new Promise((resolve,reject)=>{const tx=db.transaction(['species','sightings'],'readwrite');tx.objectStore('species').clear();tx.objectStore('sightings').clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});for(const u of imageURLs.values())URL.revokeObjectURL(u);imageURLs.clear();await reload();notify('Atlas reset.');}
+
+let savedInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();savedInstallPrompt=event;});
+async function installApp(){
+ if(savedInstallPrompt){const p=savedInstallPrompt;savedInstallPrompt=null;p.prompt();try{await p.userChoice;}catch(e){}return;}
+ notify('Use your browser menu to install: Safari Share → Add to Home Screen, or Chrome ⋮ → Install app.');
+}
+
 async function init(){try{db=await dbOpen();await reload();}catch(e){console.error(e);el('binderContent').innerHTML='<div class="empty-text"><b>Local storage is unavailable.</b> Please open Wonderdeck in Safari or Chrome, not a private browsing window, to save photos.</div>';notify('Photo storage needs a standard browser.');}
  for(const b of ['addTop','addHero','addBinder','addFab','addInBook'])el(b)?.addEventListener('click',()=>beginRecord());
  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>goTo(b.dataset.go)));
  el('modalClose').addEventListener('click',closeModal);el('overlay').addEventListener('click',e=>{if(e.target===el('overlay'))closeModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('overlay').hidden)closeModal();});
  for(const id of ['cameraInput','libraryInput'])el(id).addEventListener('change',async e=>{if(e.target.files[0])await processPhoto(e.target.files[0]);e.target.value='';});
- el('exportBtn').addEventListener('click',exportBackup);el('importBtn').addEventListener('click',()=>el('importFile').click());el('importFile').addEventListener('change',async e=>{await importBackup(e.target.files[0]);e.target.value='';});el('clearBtn').addEventListener('click',resetAtlas);
+ el('exportBtn').addEventListener('click',exportBackup);el('importBtn').addEventListener('click',()=>el('importFile').click());el('importFile').addEventListener('change',async e=>{await importBackup(e.target.files[0]);e.target.value='';});el('clearBtn').addEventListener('click',resetAtlas);el('installBtn')?.addEventListener('click',installApp);
  if((location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')&&'serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(console.warn);
 }
 window.addEventListener('pagehide',()=>{for(const u of imageURLs.values())URL.revokeObjectURL(u);imageURLs.clear();});
 attachBookSwipe();
-if('IntersectionObserver' in window){const bookView=new IntersectionObserver(items=>{el('addFab')?.classList.toggle('hide-while-browsing',items.some(x=>x.isIntersecting)&&isPhoneBook());},{threshold:.08});bookView.observe(el('binder'));}
+
 window.matchMedia('(max-width: 880px)').addEventListener('change',()=>{if(db)render();});
 init();
