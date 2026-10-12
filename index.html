@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#21473c">
+<meta name="description" content="Your personal Belgian wildlife photo card collection. Works offline.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="stylesheet" href="./style.css">
+<title>Wonderdeck · My Wild Atlas</title>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<header class="site-header wrap">
+  <button class="brand" data-go="top" aria-label="Wonderdeck home"><span class="brand-mark">✳</span><span class="brand-type">wonderdeck <small>MY WILD ATLAS · BELGIUM</small></span></button>
+  <nav class="top-nav" aria-label="Navigation"><button data-go="binder">▦ <span>My binder</span></button><button data-go="journal">◷ <span>Journal</span></button><button data-go="settings">⚙ <span>Backup</span></button></nav>
+  <button class="nav-add" id="addTop">＋ New sighting</button>
+</header>
+<main class="wrap">
+  <section class="hero" id="top">
+    <div class="hero-copy">
+      <span class="eyebrow">✳ YOUR REAL-LIFE WILDLIFE COLLECTION</span>
+      <h1>A field guide made<br>of <em>your discoveries.</em></h1>
+      <p>Every animal in your collection begins with a photo <strong>you took</strong>. Go outside, discover something wonderful, and build your own living atlas of Belgium.</p>
+      <div class="hero-actions"><button class="btn cream" id="addHero">＋ Record a discovery <span>↗</span></button><button class="btn outline-light" data-go="binder">Open my binder →</button></div>
+      <div class="hero-footer"><span>✦ No spoilers</span><span>◉ Your real photos</span><span>⌁ Works offline</span></div>
+    </div>
+    <div class="hero-image" aria-hidden="true"><div class="halo"></div><div class="photo-polaroid back"><span>?</span><small>WILD ENCOUNTER</small></div><div class="photo-polaroid front"><div class="abstract-leaf">✳</div><strong>What will you find?</strong><small>YOUR NEXT CARD IS OUT THERE</small></div><div class="spark s1">✧</div><div class="spark s2">✳</div><div class="spark s3">✧</div></div>
+  </section>
+  <section class="stats" id="stats" aria-label="Collection statistics"></section>
+  <section class="binder-section" id="binder">
+    <div class="section-intro"><div><div class="kicker">01 / THE COLLECTION</div><h2>My field binder <span class="total-pill" id="totalFound"></span></h2><p>Only your photographs reveal a card. Empty spaces never show names or pictures.</p></div><button class="btn dark desktop-add" id="addBinder">＋ Add a sighting</button></div>
+    <div class="book-frame"><div class="book-head"><div class="book-title">FIELD EDITION <span>·</span> BELGIUM</div><div class="book-status" id="bookStatus"></div></div><div class="mobile-book-picker" id="mobileBookPicker">
+  <label class="mobile-select-field"><span>Choose a book</span><select id="mobileBookSelect" aria-label="Choose animal book" onchange="chooseCategory(this.value)"></select></label>
+  <label class="mobile-select-field" id="mobileSubgroupField"><span>Inside this book</span><select id="mobileSubSelect" aria-label="Choose subgroup" onchange="chooseSubcategory(this.value)"></select></label>
+  <button class="book-mobile-record" id="addInBook">＋ Record a new sighting <span aria-hidden="true">↗</span></button>
+</div><div class="category-bar" id="categoryTabs" role="tablist" aria-label="Animal categories"></div><div class="subcategory-bar" id="subCategoryTabs" aria-label="Book subcategories" hidden></div><div id="binderContent" class="binder-content"></div></div>
+  </section>
+  <section class="journal-section" id="journal"><div class="section-intro"><div><div class="kicker">02 / YOUR FIELD NOTES</div><h2>Recent encounters</h2><p>Every repeat sighting matters. Keep building the story behind each species.</p></div></div><div class="journal-grid" id="journalList"></div></section>
+  <section class="settings-section" id="settings"><div class="section-intro"><div><div class="kicker">03 / MAKE IT LAST</div><h2>Keep your atlas safe</h2><p>Everything lives on this device. Back it up before clearing your browser or changing phones.</p></div></div><div class="save-panel"><div class="save-copy"><span class="save-icon">▤</span><div><strong>Your photos belong to you.</strong><p>Your originals are stored as optimized copies on this device, not uploaded anywhere. Export a backup containing all cards, photos and records.</p></div></div><div class="save-actions"><button class="btn dark" id="exportBtn">↓ Export backup</button><button class="btn pale" id="importBtn">↑ Import backup</button><input id="importFile" type="file" accept=".json,application/json" hidden><button class="btn text-btn" id="clearBtn">Reset atlas</button></div><p class="tiny-note">To install offline on a phone, host the included website once over HTTPS and add it to your home screen. The downloadable standalone HTML is also included for desktop use.</p></div></section>
+</main>
+<footer class="footer wrap"><span>✳ wonderdeck · made for curious eyes</span><span>Private by design · No account · No subscriptions</span></footer>
+<button class="mobile-fab" id="addFab" aria-label="Add a sighting">＋</button>
+<div id="overlay" class="overlay" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><button class="modal-close" id="modalClose" aria-label="Close">×</button><div id="modalContent"></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="libraryInput" type="file" accept="image/*" hidden>
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
